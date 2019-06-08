@@ -15,7 +15,7 @@ class CreateTemplateItemsTable extends Migration
     {
         Schema::create('template_items', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->bigInteger('template_checklist_id')->unsigned();
+            $table->bigInteger('template_id')->unsigned();
             $table->string('description');
             $table->integer('due_interval')->nullable();
             $table->string('due_unit')->nullable();
@@ -26,9 +26,9 @@ class CreateTemplateItemsTable extends Migration
             $table->integer('updated_by')->nullable();
             $table->timestamps();
 
-            $table->foreign('template_checklist_id')
+            $table->foreign('template_id')
                 ->references('id')
-                ->on('template_checklists')
+                ->on('templates')
                 ->onDelete('cascade');
         });
     }

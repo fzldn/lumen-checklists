@@ -16,8 +16,13 @@ class Item extends Model
     protected $fillable = [
         'description',
         'task_id',
+        'due',
+        'urgency',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'is_completed',
+        'completed_at',
+        'assignee_id',
     ];
 
     /**
