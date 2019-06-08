@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class TemplateItem extends Model
 {
@@ -17,25 +18,27 @@ class TemplateItem extends Model
         'due_interval',
         'due_unit',
         'urgency',
+        'assignee_id',
+        'task_id',
         'created_by',
         'updated_by',
     ];
 
     /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
+     * Get the template that owns the item template.
      */
-    protected $casts = [
-        'created_at' => 'datetime:Y-m-d\TH:i:sP',
-        'updated_at' => 'datetime:Y-m-d\TH:i:sP',
-    ];
-
-    /**
-     * Get the items for the checklist.
-     */
-    public function items()
+    public function template()
     {
-        return $this->hasMany(Item::class);
+        return $this->belongsTo(Template::class);
+    }
+
+    public function getCreatedAtAttribute($value)
+    {
+        return Carbon::parse($value)->format('c');
+    }
+
+    public function getUpdatedAtAttribute($value)
+    {
+        return Carbon::parse($value)->format('c');
     }
 }

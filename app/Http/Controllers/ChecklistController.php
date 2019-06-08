@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use App\Http\Resources\ChecklistResource;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class ChecklistController extends Controller
 {
@@ -79,36 +78,27 @@ class ChecklistController extends Controller
             'description',
             'due',
             'urgency',
-            'is_completed',
-            'completed_at',
             'updated_at'
         ];
         $this->validate($request, [
             'include' => 'filled|in:items',
             'page.limit' => 'filled|integer',
             'page.offset' => 'filled|integer',
-            'filter' => 'filled|in:object_domain,object_id,description,is_completed,completed_at',
+            'filter' => 'filled|in:' . collect($availableFields)->join(','),
             'filter.*' => 'filled|in:like,!like,is,!is,in,!in',
             'filter.*.*' => 'filled|string',
-            'sort' => [
-                'filled',
-                Rule::in(collect($availableFields)->merge(collect($availableFields)->map(function ($value) {
-                    return "-{$value}";
-                })->all()))
-            ],
+            'sort' => 'filled|in:' . collect($availableFields)->map(function ($value) {
+                return "{$value},-{$value}";
+            })->join(','),
         ]);
 
         $offset = $request->input('page.offset', 0);
         $limit = $request->input('page.limit', 10);
-        if ($orderBy = $request->input('sort')) {
-            $order = preg_replace('/^\-/', '', $orderBy);
-            $sort = preg_match('/^\-/', $orderBy) ? 'desc' : 'asc';
-        }
         $query = Checklist::with($request->input('include', []))
             ->offset($offset)
             ->limit($limit);
-        if ($orderBy) {
-            $query->orderBy($order, $sort);
+        if ($orderBy = $request->input('sort')) {
+            $query->orderBy(preg_replace('/^\-/', '', $orderBy), preg_match('/^\-/', $orderBy) ? 'desc' : 'asc');
         }
         $checklists = $query->get();
         $total = $query->count();
@@ -155,16 +145,14 @@ class ChecklistController extends Controller
             'data.attributes.urgency' => 'integer',
         ]);
 
-        if ($checklist = Checklist::with($request->input('include', []))->find($checklistId)) {
+        if ($checklist = Checklist::find($checklistId)) {
             $user = Auth::user();
-            $checklist->fill([
-                'object_domain' => $request->input('data.attributes.object_domain'),
-                'object_id' => $request->input('data.attributes.object_id'),
-                'description' => $request->input('data.attributes.description'),
-                'due' => $request->input('data.attributes.due') ? (new Carbon($request->input('data.attributes.due')))->toDateTimeString() : null,
-                'urgency' => $request->input('data.attributes.urgency'),
-                'updated_by' => $user->id,
-            ]);
+            $attributes = collect($request->input('data.attributes'))->only(['object_domain', 'object_id', 'description', 'due', 'urgency']);
+            if (isset($attributes['due'])) {
+                $attributes['due'] = $attributes['due'] ? Carbon::parse($attributes['due'])->toDateTimeString() : null;
+            }
+            $attributes['updated_by'] = $user->id;
+            $checklist->fill($attributes->all());
             $checklist->save();
 
             return new ChecklistResource($checklist);
@@ -178,7 +166,7 @@ class ChecklistController extends Controller
 
     public function destroy(Request $request, $checklistId)
     {
-        if ($checklist = Checklist::with($request->input('include', []))->find($checklistId)) {
+        if ($checklist = Checklist::find($checklistId)) {
             $checklist->delete();
             return response('', 204);
         } else {
