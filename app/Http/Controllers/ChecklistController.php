@@ -25,7 +25,7 @@ class ChecklistController extends Controller
     {
         $this->validate($request, [
             'data.attributes.object_domain' => 'required|string',
-            'data.attributes.object_id' => 'required|string',
+            'data.attributes.object_id' => 'required',
             'data.attributes.description' => 'required|string',
             'data.attributes.due' => 'date_format:"Y-m-d\TH:i:sP"|after_or_equal:now',
             'data.attributes.urgency' => 'integer',
@@ -138,9 +138,9 @@ class ChecklistController extends Controller
     public function update(Request $request, $checklistId)
     {
         $this->validate($request, [
-            'data.attributes.object_domain' => 'required|string',
-            'data.attributes.object_id' => 'required|string',
-            'data.attributes.description' => 'required|string',
+            'data.attributes.object_domain' => 'filled|string',
+            'data.attributes.object_id' => 'filled',
+            'data.attributes.description' => 'filled|string',
             'data.attributes.due' => 'date_format:"Y-m-d\TH:i:sP"|after_or_equal:now',
             'data.attributes.urgency' => 'integer',
         ]);
